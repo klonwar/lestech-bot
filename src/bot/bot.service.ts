@@ -3,7 +3,7 @@ import { InjectBot } from 'nestjs-telegraf';
 import { SceneContext } from 'telegraf/typings/scenes';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../model/user/user.model';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Telegraf } from 'telegraf';
 import { List } from '../model/list/list.model';
 import { DocumentType, Person } from '../model/person/person.model';
@@ -19,7 +19,20 @@ export class BotService {
   ) {}
 
   async notify(list: List, user?: User) {
-    const users = user ? [user] : await this.userRepository.find();
+    if (user && !user.person) {
+      await this.bot.telegram.sendMessage(
+        user.id,
+        `You need to specify your ID, please run /start command`,
+      );
+      return;
+    }
+    const users = user
+      ? [user]
+      : await this.userRepository.find({
+          where: {
+            person: Not(IsNull()),
+          },
+        });
     const persons = await this.personRepository.find();
     const personsOriginal = await this.personRepository.findBy({
       document: DocumentType.ORIGINAL,
