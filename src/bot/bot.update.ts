@@ -1,4 +1,4 @@
-import { Command, Ctx, Start, Update } from 'nestjs-telegraf';
+import { Command, Ctx, InjectBot, Start, Update } from 'nestjs-telegraf';
 import { Injectable } from '@nestjs/common';
 import { User } from '../model/user/user.model';
 import { Repository } from 'typeorm';
@@ -8,17 +8,24 @@ import { SceneContext } from 'telegraf/typings/scenes';
 import { BotScene } from './scenes/scenes.constants';
 import { ListService } from '../list/list.service';
 import { BotService } from './bot.service';
+import { Telegraf } from 'telegraf';
 
 @Update()
 @Injectable()
 export class BotUpdate {
   constructor(
+    @InjectBot() private bot: Telegraf<SceneContext>,
     private configService: ConfigService,
     private listService: ListService,
     private botService: BotService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
+  ) {
+    bot.telegram.setMyCommands([
+      { command: 'start', description: 'Set/Change your ID' },
+      { command: 'check', description: 'Check updates and get info about you' },
+    ]);
+  }
 
   @Start()
   async start(@Ctx() context: SceneContext) {

@@ -43,7 +43,7 @@ export class PersonIdScene {
       await context.reply('No such person in the table');
       return;
     }
-    if (person.user) {
+    if (person.user && user.id !== person.user.id) {
       await context.reply(
         'Such ID already registered in the system, please contact @klownar if you think this is a mistake',
       );
