@@ -24,6 +24,7 @@ export class BotUpdate {
     bot.telegram.setMyCommands([
       { command: 'start', description: 'Set/Change your ID' },
       { command: 'check', description: 'Check updates and get info about you' },
+      { command: 'top', description: 'Get top of bot users' },
     ]);
   }
 
@@ -47,5 +48,11 @@ export class BotUpdate {
       await context.reply(`No changes yet`);
     }
     await this.botService.notify(list, user);
+  }
+
+  @Command('top')
+  async top(@Ctx() context: SceneContext) {
+    const message = await this.botService.top();
+    await context.reply(message);
   }
 }

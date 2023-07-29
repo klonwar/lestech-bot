@@ -18,12 +18,51 @@ export class BotService {
     @InjectRepository(Person) private personRepository: Repository<Person>,
   ) {}
 
+  async top(target?: User) {
+    if (target && (await this.isInvalidUser(target))) {
+      return;
+    }
+    const users = await this.userRepository.find({
+      where: {
+        person: Not(IsNull()),
+      },
+      order: {
+        person: {
+          score: 'DESC',
+        },
+      },
+    });
+
+    const prefixes = [`🏆`, `🥈`, `🥉`];
+    const suffixes = [`🍆`];
+
+    let message = `Top bot users:\n\n`;
+    users.forEach((user, index) => {
+      if (index < prefixes.length) {
+        message += prefixes[index];
+      } else if (users.length - index - 1 < suffixes.length) {
+        message += `${suffixes[users.length - index - 1]} `;
+      } else {
+        message += `🌲 `;
+      }
+
+      if (user.username) {
+        message += `${user.username}`;
+      } else {
+        message += `anon`;
+      }
+      message += ` - ${user.person.score}`;
+      if (target && user.id === target.id) {
+        message += ` <`;
+      }
+      message += `\n`;
+    });
+
+    return message;
+  }
+
   async notify(list: List, user?: User) {
-    if (user && !user.person) {
-      await this.bot.telegram.sendMessage(
-        user.id,
-        `You need to specify your ID, please run /start command`,
-      );
+    if (user && (await this.isInvalidUser(user))) {
       return;
     }
     const users = user
@@ -41,7 +80,7 @@ export class BotService {
     for (const user of users) {
       await this.bot.telegram.sendMessage(
         user.id,
-        await this.generateMessage(user, list, persons, personsOriginal),
+        await this.generateNotifyMessage(user, list, persons, personsOriginal),
         {
           parse_mode: 'Markdown',
         },
@@ -51,7 +90,7 @@ export class BotService {
     }
   }
 
-  private async generateMessage(
+  private async generateNotifyMessage(
     user: User,
     list: List,
     persons: Person[],
@@ -112,5 +151,17 @@ export class BotService {
 
   private async sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async isInvalidUser(user: User) {
+    if (user && !user.person) {
+      await this.bot.telegram.sendMessage(
+        user.id,
+        `You need to specify your ID, please run /start command`,
+      );
+      return true;
+    }
+
+    return false;
   }
 }
