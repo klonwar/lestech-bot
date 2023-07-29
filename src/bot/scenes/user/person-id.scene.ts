@@ -9,9 +9,9 @@ import {
 import { SceneContext } from 'telegraf/typings/scenes';
 import { BotScene } from '../scenes.constants';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../../model/user/user.model';
+import { User } from '../../../model/user/user.model';
 import { Repository } from 'typeorm';
-import { Person } from '../../model/person/person.model';
+import { Person } from '../../../model/person/person.model';
 
 @Scene(BotScene.PERSON_ID)
 export class PersonIdScene {

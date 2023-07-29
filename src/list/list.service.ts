@@ -1,20 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import xlsx from 'node-xlsx';
-import { List } from './model/list/list.model';
+import { List } from '../model/list/list.model';
 import {
   getCellInRow,
   getCellInTable,
   positions,
-} from './model/list/list.constants';
+} from '../model/list/list.constants';
 import { plainToClass } from 'class-transformer';
-import { firstValueFrom, map } from 'rxjs';
+import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class AppService {
+export class ListService {
+  private readonly logger = new Logger(ListService.name);
+
   constructor(
     private configService: ConfigService,
     private httpService: HttpService,
@@ -29,6 +31,24 @@ export class AppService {
     });
     await list.save();
 
+    this.logger.log(
+      isExists ? `No updates` : `New list found and saved - ${list.date}`,
+    );
+
+    return {
+      list,
+      updated: !isExists,
+    };
+  }
+
+  public async check() {
+    const list = await this.request();
+    const isExists = await this.listRepository.findOneBy({
+      date: list.date,
+    });
+
+    this.logger.log(isExists ? `No updates` : `New list found - ${list.date}`);
+
     return {
       list,
       updated: !isExists,
@@ -42,7 +62,13 @@ export class AppService {
         .get(url, {
           responseType: 'arraybuffer',
         })
-        .pipe(map((blob) => this.parse(blob.data))),
+        .pipe(
+          map((blob) => this.parse(blob.data)),
+          catchError((e) => {
+            this.logger.error(e);
+            return of(null);
+          }),
+        ),
     );
   }
 
