@@ -32,9 +32,21 @@ export class PersonIdScene {
   async id(@Ctx() context: SceneContext, @Message('text') personId: string) {
     const userId = context.from.id;
     const user = await this.userRepository.findOneBy({ id: userId });
-    const person = await this.personRepository.findOneBy({ id: personId });
+    const person = await this.personRepository.findOne({
+      where: { id: personId },
+      relations: {
+        user: true,
+      },
+    });
+
     if (!person) {
       await context.reply('No such person in the table');
+      return;
+    }
+    if (person.user) {
+      await context.reply(
+        'Such ID already registered in the system, please contact @klownar if you think this is a mistake',
+      );
       return;
     }
     user.person = person;

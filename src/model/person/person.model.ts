@@ -1,6 +1,14 @@
 import { Transform } from 'class-transformer';
-import { BaseEntity, Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  ManyToOne,
+  OneToOne,
+  PrimaryColumn,
+} from 'typeorm';
 import { List } from '../list/list.model';
+import { User } from '../user/user.model';
 
 export enum DocumentType {
   ORIGINAL = 'original',
@@ -29,4 +37,7 @@ export class Person extends BaseEntity {
 
   @ManyToOne(() => List, (list) => list.persons)
   list: List;
+
+  @OneToOne(() => User, (user) => user.person)
+  user: User;
 }
