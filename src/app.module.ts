@@ -8,6 +8,9 @@ import { Person } from './model/person/person.model';
 import { List } from './model/list/list.model';
 import { User } from './model/user/user.model';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { session } from 'telegraf';
+import { ScenesModule } from './scenes/scenes.module';
+import { CronService } from './cron/cron.service';
 
 @Module({
   imports: [
@@ -19,6 +22,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         token: configService.get<string>('TELEGRAM_TOKEN'),
+        middlewares: [session()],
       }),
     }),
     TypeOrmModule.forRoot({
@@ -28,8 +32,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       autoLoadEntities: true,
     }),
     TypeOrmModule.forFeature([User, Person, List]),
+    ScenesModule,
   ],
   controllers: [],
-  providers: [AppService, AppUpdate],
+  providers: [AppService, AppUpdate, CronService],
 })
 export class AppModule {}
