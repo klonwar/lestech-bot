@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { SceneContext } from 'telegraf/typings/scenes';
 import { BotScene } from './scenes/scenes.constants';
 import { ListService } from '../list/list.service';
+import { BotService } from './bot.service';
 
 @Update()
 @Injectable()
@@ -14,24 +15,30 @@ export class BotUpdate {
   constructor(
     private configService: ConfigService,
     private listService: ListService,
+    private botService: BotService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}
 
   @Start()
-  async start(@Ctx() ctx: SceneContext) {
-    await ctx.scene.enter(BotScene.PERSON_ID);
+  async start(@Ctx() context: SceneContext) {
+    await context.scene.enter(BotScene.PERSON_ID);
   }
 
   @Command('check')
-  async check(@Ctx() ctx: SceneContext) {
+  async check(@Ctx() context: SceneContext) {
     const { list, updated } = await this.listService.check();
+    const userId = context.from.id;
+    const user = await this.userRepository.findOneBy({ id: userId });
     const url = this.configService.get<string>('URL');
 
     if (updated) {
-      await ctx.reply(`List updated - ${list.date}\n${url}`);
+      await context.reply(
+        `List updated - ${url}.\nSoon you'll receive notification`,
+      );
     } else {
-      await ctx.reply(`No changes yet. \nLast update - ${list.date}`);
+      await context.reply(`No changes yet`);
     }
+    await this.botService.notify(list, user);
   }
 }

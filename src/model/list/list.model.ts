@@ -1,6 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import { Person } from '../person/person.model';
-import { BaseEntity, Entity, OneToMany, PrimaryColumn } from 'typeorm';
+import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class List extends BaseEntity {
@@ -12,6 +12,14 @@ export class List extends BaseEntity {
     },
   )
   date: string;
+
+  @Column({
+    nullable: true,
+  })
+  @Transform(({ value }) => value.match(/\d+/g)[0], {
+    toClassOnly: true,
+  })
+  places: number;
 
   @OneToMany(() => Person, (person) => person.list, {
     cascade: true,

@@ -2,6 +2,7 @@ import * as moment from 'moment/moment';
 
 export const positions = {
   datetime: [2, 0],
+  places: [10, 0],
   listStart: [13, 0],
   id: [13, 1],
   document: [13, 2],

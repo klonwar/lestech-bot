@@ -28,6 +28,6 @@ import { ListModule } from '../list/list.module';
   ],
   controllers: [],
   providers: [BotService, BotUpdate],
-  exports: [ScenesModule],
+  exports: [ScenesModule, BotService],
 })
 export class BotModule {}

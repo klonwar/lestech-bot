@@ -62,7 +62,7 @@ export class PersonIdScene {
         ...context.from,
       });
       await this.userRepository.save(user);
-      await context.reply(`User @${user.username} registered`);
+      await context.reply(`User @${user.username ?? user.id} registered`);
     }
   }
 }

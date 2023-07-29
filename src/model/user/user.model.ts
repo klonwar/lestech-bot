@@ -13,10 +13,14 @@ export class User extends BaseEntity {
   @PrimaryColumn()
   id: number;
 
-  @Column()
-  username: string;
+  @Column({
+    nullable: true,
+  })
+  username?: string;
 
-  @OneToOne(() => Person)
+  @OneToOne(() => Person, {
+    eager: true,
+  })
   @JoinColumn()
   person: Person;
 }

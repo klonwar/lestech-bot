@@ -76,6 +76,7 @@ export class ListService {
     const table = xlsx.parse(buffer)[0].data;
     return plainToClass(List, {
       date: getCellInTable(table, 'datetime'),
+      places: getCellInTable(table, 'places'),
       persons: table.slice(positions.listStart[0]).map((person) => ({
         id: getCellInRow(person, 'id'),
         document: getCellInRow(person, 'document'),
