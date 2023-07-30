@@ -17,6 +17,7 @@ import { ListService } from '../list/list.service';
 import { BotService } from './bot.service';
 import { Telegraf } from 'telegraf';
 import { User as TelegramUser } from 'typegram';
+import { AvailableCommands, myCommands } from './bot.constants';
 
 @Update()
 @Injectable()
@@ -29,11 +30,7 @@ export class BotUpdate {
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {
-    bot.telegram.setMyCommands([
-      { command: 'start', description: 'Set/Change your ID' },
-      { command: 'check', description: 'Check updates and get info about you' },
-      { command: 'top', description: 'Get top of bot users' },
-    ]);
+    bot.telegram.setMyCommands(myCommands);
   }
 
   @Start()
@@ -41,7 +38,7 @@ export class BotUpdate {
     await context.scene.enter(BotScene.PERSON_ID);
   }
 
-  @Command('check')
+  @Command(AvailableCommands.CHECK)
   async check(@Ctx() context: SceneContext, @Sender() sender: TelegramUser) {
     const { list, updated } = await this.listService.check();
     const user = await this.userRepository.findOneBy({ id: sender.id });
@@ -57,7 +54,7 @@ export class BotUpdate {
     await this.botService.notify(list, user);
   }
 
-  @Command('top')
+  @Command(AvailableCommands.TOP)
   async top(@Ctx() context: SceneContext) {
     const message = await this.botService.top();
     await context.reply(message);
