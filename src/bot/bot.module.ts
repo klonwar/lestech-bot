@@ -11,6 +11,7 @@ import { User } from '../model/user/user.model';
 import { Person } from '../model/person/person.model';
 import { List } from '../model/list/list.model';
 import { ListModule } from '../list/list.module';
+import { MessageService } from './message.service';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { ListModule } from '../list/list.module';
     ListModule,
   ],
   controllers: [],
-  providers: [BotService, BotUpdate],
+  providers: [BotService, BotUpdate, MessageService],
   exports: [ScenesModule, BotService],
 })
 export class BotModule {}

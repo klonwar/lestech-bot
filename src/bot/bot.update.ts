@@ -10,10 +10,8 @@ import { Injectable } from '@nestjs/common';
 import { User } from '../model/user/user.model';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 import { SceneContext } from 'telegraf/typings/scenes';
 import { BotScene } from './scenes/scenes.constants';
-import { ListService } from '../list/list.service';
 import { BotService } from './bot.service';
 import { Telegraf } from 'telegraf';
 import { User as TelegramUser } from 'typegram';
@@ -24,8 +22,6 @@ import { AvailableCommands, myCommands } from './bot.constants';
 export class BotUpdate {
   constructor(
     @InjectBot() private bot: Telegraf<SceneContext>,
-    private configService: ConfigService,
-    private listService: ListService,
     private botService: BotService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -40,23 +36,14 @@ export class BotUpdate {
 
   @Command(AvailableCommands.CHECK)
   async check(@Ctx() context: SceneContext, @Sender() sender: TelegramUser) {
-    const { list, updated } = await this.listService.check();
+    // @TODO: specify target user id after check command
     const user = await this.userRepository.findOneBy({ id: sender.id });
-    const url = this.configService.get<string>('URL');
-
-    if (updated) {
-      await context.reply(
-        `List updated - ${url}.\nSoon you'll receive notification`,
-      );
-    } else {
-      await context.reply(`No changes yet`);
-    }
-    await this.botService.notify(list, user);
+    await this.botService.sendCurrentInfo(user);
   }
 
   @Command(AvailableCommands.TOP)
-  async top(@Ctx() context: SceneContext) {
-    const message = await this.botService.top();
-    await context.reply(message);
+  async top(@Ctx() context: SceneContext, @Sender() sender: TelegramUser) {
+    const user = await this.userRepository.findOneBy({ id: sender.id });
+    await this.botService.sendTop(user);
   }
 }

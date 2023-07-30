@@ -7,58 +7,45 @@ import { IsNull, Not, Repository } from 'typeorm';
 import { Telegraf } from 'telegraf';
 import { List } from '../model/list/list.model';
 import { DocumentType, Person } from '../model/person/person.model';
+import { ListService } from '../list/list.service';
+import { MessageService } from './message.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class BotService {
   private readonly logger = new Logger(BotService.name);
 
   constructor(
+    private listService: ListService,
+    private messageService: MessageService,
+    private configService: ConfigService,
     @InjectBot() private bot: Telegraf<SceneContext>,
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(Person) private personRepository: Repository<Person>,
   ) {}
 
-  async top(target?: User) {
-    if (target && (await this.isInvalidUser(target))) {
+  async sendCurrentInfo(user: User, target = user) {
+    const { list, updated } = await this.listService.check();
+    const url = this.configService.get<string>('URL');
+
+    await this.bot.telegram.sendMessage(
+      user.id,
+      updated
+        ? `List updated - ${url}.\nSoon you'll receive notification`
+        : `No changes yet`,
+    );
+
+    await this.notify(list, target);
+  }
+
+  async sendTop(user?: User) {
+    if (user && (await this.isInvalidUser(user))) {
       return;
     }
-    const users = await this.userRepository.find({
-      where: {
-        person: Not(IsNull()),
-      },
-      order: {
-        person: {
-          score: 'DESC',
-        },
-      },
-    });
-
-    const prefixes = [`🏆`, `🥈`, `🥉`];
-    const suffixes = [`🍆`];
-
-    let message = `Top bot users:\n\n`;
-    users.forEach((user, index) => {
-      if (index < prefixes.length) {
-        message += prefixes[index];
-      } else if (users.length - index - 1 < suffixes.length) {
-        message += `${suffixes[users.length - index - 1]} `;
-      } else {
-        message += `🌲 `;
-      }
-
-      if (user.username) {
-        message += `${user.username}`;
-      } else {
-        message += `anon`;
-      }
-      message += ` - ${user.person.score}`;
-      if (target && user.id === target.id) {
-        message += ` <`;
-      }
-      message += `\n`;
-    });
-
-    return message;
+    await this.bot.telegram.sendMessage(
+      user.id,
+      await this.messageService.top(user),
+    );
   }
 
   async notify(list: List, user?: User) {
@@ -80,7 +67,7 @@ export class BotService {
     for (const user of users) {
       await this.bot.telegram.sendMessage(
         user.id,
-        await this.generateNotifyMessage(user, list, persons, personsOriginal),
+        await this.messageService.notify(user, list, persons, personsOriginal),
         {
           parse_mode: 'Markdown',
         },
@@ -88,65 +75,6 @@ export class BotService {
       this.logger.log(`@${user.username ?? user.id} notified`);
       await this.sleep(1000);
     }
-  }
-
-  private async generateNotifyMessage(
-    user: User,
-    list: List,
-    persons: Person[],
-    personsOriginal: Person[],
-  ) {
-    let m = `📅 Date: ${list.date}\n`;
-
-    const places = list.places;
-    m += `#️⃣ Places: ${places}\n\n`;
-
-    const position =
-      persons.findIndex((person) => person.id === user.person.id) + 1;
-    m += `📍 Position: *${position}* / ${persons.length}\n`;
-
-    let positionOriginal =
-      personsOriginal.findIndex((person) => person.id === user.person.id) + 1;
-    if (!positionOriginal) {
-      const originalsAndYou = await this.personRepository.find({
-        where: [
-          {
-            document: DocumentType.ORIGINAL,
-          },
-          {
-            id: user.person.id,
-          },
-        ],
-        order: {
-          document: 'DESC',
-        },
-      });
-      positionOriginal =
-        originalsAndYou.findIndex((person) => person.id === user.person.id) + 1;
-    }
-    m += `📍 Position (originals): *${positionOriginal}* / ${personsOriginal.length}\n`;
-
-    const score = user.person.score;
-    m += `🎯 Score: *${score}* / 100\n`;
-    m += `\n`;
-    m += `👤 ID: ${user.person.id}\n`;
-    m += `📄 Document: ${user.person.document}\n\n`;
-
-    if (user.person.document === DocumentType.COPY) {
-      m += `⚠ _It is necessary to provide the original document of education!_\n`;
-    }
-    if (score !== 0) {
-      if (position <= places) {
-        m += `🎉 _Looks like you did it! Congratulations_`;
-      } else if (positionOriginal <= places) {
-        m += `🍀 _You better hope no one brings the original_`;
-      } else {
-        m += `😥 _Not sure you gonna make it..._`;
-      }
-    } else {
-      m += `⏳ _Your score is 0, waiting..._`;
-    }
-    return m;
   }
 
   private async sleep(ms) {
