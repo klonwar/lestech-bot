@@ -5,6 +5,7 @@ import {
   Scene,
   SceneEnter,
   SceneLeave,
+  Sender,
 } from 'nestjs-telegraf';
 import { SceneContext } from 'telegraf/typings/scenes';
 import { BotScene } from '../scenes.constants';
@@ -12,6 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../../model/user/user.model';
 import { Repository } from 'typeorm';
 import { Person } from '../../../model/person/person.model';
+import { User as TelegramUser } from 'typegram/manage';
 
 @Scene(BotScene.PERSON_ID)
 export class PersonIdScene {
@@ -29,9 +31,12 @@ export class PersonIdScene {
   }
 
   @Hears(/[\d]+\/[\d]+[a-zA-ZА-я]+\/[\d]+/)
-  async id(@Ctx() context: SceneContext, @Message('text') personId: string) {
-    const userId = context.from.id;
-    const user = await this.userRepository.findOneBy({ id: userId });
+  async id(
+    @Ctx() context: SceneContext,
+    @Message('text') personId: string,
+    @Sender() sender: TelegramUser,
+  ) {
+    const user = await this.userRepository.findOneBy({ id: sender.id });
     const person = await this.personRepository.findOne({
       where: { id: personId },
       relations: {
