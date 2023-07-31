@@ -14,9 +14,14 @@ import { User } from '../../../model/user/user.model';
 import { Repository } from 'typeorm';
 import { Person } from '../../../model/person/person.model';
 import { User as TelegramUser } from 'typegram/manage';
+import { adminUsername } from '../../bot.constants';
+import { Logger, UseFilters } from '@nestjs/common';
+import { AnyExceptionFilter } from '../../filters/any-exception.filter';
 
 @Scene(BotScene.PERSON_ID)
 export class PersonIdScene {
+  private readonly logger = new Logger(PersonIdScene.name);
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -25,12 +30,14 @@ export class PersonIdScene {
   ) {}
 
   @SceneEnter()
+  @UseFilters(AnyExceptionFilter)
   async enter(@Ctx() context: SceneContext) {
     await this.registerUser(context);
     await context.reply('Enter your ID ("Номер личного дела")');
   }
 
   @Hears(/[\d]+\/[\d]+[a-zA-ZА-я]+\/[\d]+/)
+  @UseFilters(AnyExceptionFilter)
   async id(
     @Ctx() context: SceneContext,
     @Message('text') personId: string,
@@ -50,7 +57,7 @@ export class PersonIdScene {
     }
     if (person.user && user.id !== person.user.id) {
       await context.reply(
-        'Such ID already registered in the system, please contact @klownar if you think this is a mistake',
+        `Such ID already registered in the system, please contact @${adminUsername} if you think this is a mistake`,
       );
       return;
     }
@@ -60,11 +67,13 @@ export class PersonIdScene {
   }
 
   @Hears(/.*/)
+  @UseFilters(AnyExceptionFilter)
   async wrong(@Ctx() context: SceneContext) {
     await context.reply('ID must be in format "00/00Моб/23"');
   }
 
   @SceneLeave()
+  @UseFilters(AnyExceptionFilter)
   async leave(@Ctx() context: SceneContext) {
     await context.reply(
       'Saved.\nIn order to change your ID please run /start again',
@@ -79,7 +88,10 @@ export class PersonIdScene {
         ...context.from,
       });
       await this.userRepository.save(user);
-      await context.reply(`User @${user.username ?? user.id} registered`);
+
+      const message = `User @${user.username ?? user.id} registered`;
+      this.logger.log(message);
+      await context.reply(message);
     }
   }
 }

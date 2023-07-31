@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TelegrafModule } from 'nestjs-telegraf';
 import { BotUpdate } from './bot.update';
 import { HttpModule } from '@nestjs/axios';
@@ -12,6 +12,7 @@ import { Person } from '../model/person/person.model';
 import { List } from '../model/list/list.model';
 import { ListModule } from '../list/list.module';
 import { MessageService } from './message.service';
+import * as TelegrafLogger from 'telegraf-logger';
 
 @Module({
   imports: [
@@ -20,7 +21,15 @@ import { MessageService } from './message.service';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         token: configService.get<string>('TELEGRAM_TOKEN'),
-        middlewares: [session()],
+        middlewares: [
+          session(),
+          (() => {
+            const nestLogger = new Logger(TelegrafLogger.name);
+            return new TelegrafLogger({
+              log: (message) => nestLogger.verbose(message),
+            }).middleware();
+          })(),
+        ],
       }),
     }),
     TypeOrmModule.forFeature([User, Person, List]),
