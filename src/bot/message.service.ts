@@ -35,6 +35,7 @@ export class MessageService {
           },
         ],
         order: {
+          score: 'DESC',
           document: 'DESC',
         },
       });

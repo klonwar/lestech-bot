@@ -59,9 +59,18 @@ export class BotService {
             person: Not(IsNull()),
           },
         });
-    const persons = await this.personRepository.find();
-    const personsOriginal = await this.personRepository.findBy({
-      document: DocumentType.ORIGINAL,
+    const persons = await this.personRepository.find({
+      order: {
+        score: 'DESC',
+      },
+    });
+    const personsOriginal = await this.personRepository.find({
+      where: {
+        document: DocumentType.ORIGINAL,
+      },
+      order: {
+        score: 'DESC',
+      },
     });
 
     for (const user of users) {
