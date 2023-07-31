@@ -92,7 +92,13 @@ export class MessageService {
       ``,
       ...users.map((user, index) => {
         const parts = [
-          this.choosePrefix(index, users.length, [`🏆`, `🥈`, `🥉`], [`🍆`]),
+          this.choosePrefix(
+            index,
+            users.length,
+            [`🏆`, `🥈`, `🥉`],
+            [`🍆`],
+            `🌲`,
+          ),
           user.username || `anon`,
           `- ${user.person.score}`,
           target?.id && user.id === target.id ? `<` : null,
