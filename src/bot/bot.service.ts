@@ -24,7 +24,7 @@ export class BotService {
     @InjectRepository(Person) private personRepository: Repository<Person>,
   ) {}
 
-  async sendCurrentInfo(user: User, target = user) {
+  async sendCurrentInfo(user: User, about = user.person) {
     const { list, updated } = await this.listService.check();
     const url = this.configService.get<string>('URL');
 
@@ -35,7 +35,7 @@ export class BotService {
         : `No changes yet`,
     );
 
-    await this.notify(list, target);
+    await this.notify(list, user, about);
   }
 
   async sendTop(user?: User) {
@@ -44,15 +44,15 @@ export class BotService {
     }
     await this.bot.telegram.sendMessage(
       user.id,
-      await this.messageService.top(user),
+      await this.messageService.topTemplate(user),
     );
   }
 
-  async notify(list: List, user?: User) {
+  async notify(list: List, user?: User, about?: Person) {
     if (user && (await this.isInvalidUser(user))) {
       return;
     }
-    const users = user
+    const targets = user
       ? [user]
       : await this.userRepository.find({
           where: {
@@ -73,10 +73,15 @@ export class BotService {
       },
     });
 
-    for (const user of users) {
+    for (const user of targets) {
       await this.bot.telegram.sendMessage(
         user.id,
-        await this.messageService.notify(user, list, persons, personsOriginal),
+        await this.messageService.notifyTemplate(
+          about || user.person,
+          list,
+          persons,
+          personsOriginal,
+        ),
         {
           parse_mode: 'Markdown',
         },

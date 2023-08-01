@@ -12,18 +12,16 @@ export class MessageService {
     @InjectRepository(Person) private personRepository: Repository<Person>,
   ) {}
 
-  public async notify(
-    forUser: User,
+  public async notifyTemplate(
+    about: Person,
     list: List,
     persons: Person[],
     personsOriginal: Person[],
   ) {
     const places = list.places;
-    const position =
-      persons.findIndex((person) => person.id === forUser.person.id) + 1;
+    const position = persons.findIndex((person) => person.id === about.id) + 1;
     let positionOriginal =
-      personsOriginal.findIndex((person) => person.id === forUser.person.id) +
-      1;
+      personsOriginal.findIndex((person) => person.id === about.id) + 1;
     if (!positionOriginal) {
       const originalsAndYou = await this.personRepository.find({
         where: [
@@ -31,7 +29,7 @@ export class MessageService {
             document: DocumentType.ORIGINAL,
           },
           {
-            id: forUser.person.id,
+            id: about.id,
           },
         ],
         order: {
@@ -40,10 +38,9 @@ export class MessageService {
         },
       });
       positionOriginal =
-        originalsAndYou.findIndex((person) => person.id === forUser.person.id) +
-        1;
+        originalsAndYou.findIndex((person) => person.id === about.id) + 1;
     }
-    const score = forUser.person.score;
+    const score = about.score;
 
     const lines = [
       `📅 Date: ${list.date}`,
@@ -53,10 +50,10 @@ export class MessageService {
       `📍 Position (originals): *${positionOriginal}* / ${personsOriginal.length}`,
       `🎯 Score: *${score}* / 100`,
       ``,
-      `👤 ID: ${forUser.person.id}`,
-      `📄 Document: ${forUser.person.document}`,
+      `👤 ID: ${about.id}`,
+      `📄 Document: ${about.document}`,
       ``,
-      forUser.person.document === DocumentType.COPY
+      about.document === DocumentType.COPY
         ? `⚠ _It is necessary to provide the original document of education!_`
         : null,
     ];
@@ -76,7 +73,7 @@ export class MessageService {
     return this.fromLines(lines);
   }
 
-  public async top(target?: User) {
+  public async topTemplate(target?: User) {
     const users = await this.userRepository.find({
       where: {
         person: Not(IsNull()),

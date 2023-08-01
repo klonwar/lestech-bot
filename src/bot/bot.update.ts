@@ -2,6 +2,7 @@ import {
   Command,
   Ctx,
   InjectBot,
+  Message,
   Sender,
   Start,
   Update,
@@ -19,6 +20,7 @@ import { AvailableCommands, myCommands } from './bot.constants';
 import { WithPersonGuard } from './guards/with-person.guard';
 import { AnyExceptionFilter } from './filters/any-exception.filter';
 import { GuardExceptionFilter } from './filters/guard-exception.filter';
+import { Person } from '../model/person/person.model';
 
 @Update()
 @Injectable()
@@ -28,6 +30,8 @@ export class BotUpdate {
     private botService: BotService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Person)
+    private personRepository: Repository<Person>,
   ) {
     bot.telegram.setMyCommands(myCommands);
   }
@@ -41,10 +45,30 @@ export class BotUpdate {
   @Command(AvailableCommands.CHECK)
   @UseFilters(AnyExceptionFilter, GuardExceptionFilter)
   @UseGuards(WithPersonGuard)
-  async check(@Ctx() context: SceneContext, @Sender() sender: TelegramUser) {
-    // @TODO: specify target user id after check command
+  async check(
+    @Ctx() context: SceneContext,
+    @Sender() sender: TelegramUser,
+    @Message('text') message: string,
+  ) {
     const user = await this.userRepository.findOneBy({ id: sender.id });
-    await this.botService.sendCurrentInfo(user);
+    const body = message.replace(/\/[a-zA-Z]+\s*/, '');
+    const about = body
+      ? (await this.personRepository.findOneBy({
+          id: body,
+        })) ||
+        (
+          await this.userRepository.findOneBy({
+            username: body,
+          })
+        ).person
+      : user.person;
+
+    if (!about) {
+      await context.reply('No such person in the table');
+      return;
+    }
+
+    await this.botService.sendCurrentInfo(user, about);
   }
 
   @Command(AvailableCommands.TOP)
