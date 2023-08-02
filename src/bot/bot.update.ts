@@ -53,14 +53,16 @@ export class BotUpdate {
     const user = await this.userRepository.findOneBy({ id: sender.id });
     const body = message.replace(/\/[a-zA-Z]+\s*/, '');
     const about = body
-      ? (await this.personRepository.findOneBy({
-          id: body,
-        })) ||
-        (
-          await this.userRepository.findOneBy({
-            username: body,
-          })
-        ).person
+      ? await this.personRepository.findOneBy([
+          {
+            id: body,
+          },
+          {
+            user: {
+              username: body,
+            },
+          },
+        ])
       : user.person;
 
     if (!about) {

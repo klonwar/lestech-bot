@@ -5,7 +5,8 @@ import { BotService } from '../bot/bot.service';
 
 @Injectable()
 export class CronService {
-  private static readonly PERIOD = 5;
+  // @TODO: Move into env variable
+  private static readonly PERIOD = 59;
   private readonly logger = new Logger(CronService.name);
 
   constructor(
