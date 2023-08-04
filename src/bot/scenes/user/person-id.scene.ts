@@ -14,15 +14,16 @@ import { User } from '../../../model/user/user.model';
 import { Repository } from 'typeorm';
 import { Person } from '../../../model/person/person.model';
 import { User as TelegramUser } from 'typegram/manage';
-import { adminUsername } from '../../bot.constants';
 import { Logger, UseFilters } from '@nestjs/common';
 import { AnyExceptionFilter } from '../../filters/any-exception.filter';
+import { ConfigService } from '@nestjs/config';
 
 @Scene(BotScene.PERSON_ID)
 export class PersonIdScene {
   private readonly logger = new Logger(PersonIdScene.name);
 
   constructor(
+    private configService: ConfigService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
     @InjectRepository(Person)
@@ -57,7 +58,9 @@ export class PersonIdScene {
     }
     if (person.user && user.id !== person.user.id) {
       await context.reply(
-        `Such ID already registered in the system, please contact @${adminUsername} if you think this is a mistake`,
+        `Such ID already registered in the system, please contact @${this.configService.get<string>(
+          'ADMIN',
+        )} if you think this is a mistake`,
       );
       return;
     }

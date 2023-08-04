@@ -1,13 +1,17 @@
 import { Catch, ExceptionFilter, Logger } from '@nestjs/common';
 import { TelegrafExecutionContext } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
-import { adminUsername } from '../bot.constants';
+import { ConfigService } from '@nestjs/config';
 
 @Catch()
 export class AnyExceptionFilter implements ExceptionFilter {
-  private static readonly DEFAULT_MESSAGE = `Error occurred. Please try again later or contact @${adminUsername}`;
+  private readonly DEFAULT_MESSAGE = `Error occurred. Please try again later or contact @${this.configService.get<string>(
+    'ADMIN',
+  )}`;
 
   private readonly logger = new Logger(AnyExceptionFilter.name);
+
+  constructor(private configService: ConfigService) {}
 
   catch(exception, host): any {
     const tg = TelegrafExecutionContext.create(host);
@@ -24,6 +28,6 @@ export class AnyExceptionFilter implements ExceptionFilter {
     );
     this.logger.error(exception.stack);
 
-    return AnyExceptionFilter.DEFAULT_MESSAGE;
+    return this.DEFAULT_MESSAGE;
   }
 }

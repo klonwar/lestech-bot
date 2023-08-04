@@ -6,13 +6,17 @@ import {
 } from '@nestjs/common';
 import { TelegrafExecutionContext } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
-import { adminUsername } from '../bot.constants';
 import { GuardException } from '../exceptions/guard.exception';
+import { ConfigService } from '@nestjs/config';
 
 @Catch(ForbiddenException)
 export class GuardExceptionFilter implements ExceptionFilter {
-  private static readonly DEFAULT_MESSAGE = `Your are not allowed to do this yet. Please contact @${adminUsername} if you think this is a mistake`;
+  private readonly DEFAULT_MESSAGE = `Your are not allowed to do this yet. Please contact @${this.configService.get<string>(
+    'ADMIN',
+  )} if you think this is a mistake`;
   private readonly logger = new Logger(GuardExceptionFilter.name);
+
+  constructor(private configService: ConfigService) {}
 
   catch(exception, host): any {
     const tg = TelegrafExecutionContext.create(host);
@@ -32,6 +36,6 @@ export class GuardExceptionFilter implements ExceptionFilter {
       return exception.message;
     }
 
-    return GuardExceptionFilter.DEFAULT_MESSAGE;
+    return this.DEFAULT_MESSAGE;
   }
 }

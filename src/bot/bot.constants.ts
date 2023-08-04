@@ -18,6 +18,3 @@ export const myCommands: BotCommand[] = Object.entries(
   command: key,
   description: value,
 }));
-
-// @TODO: Research ways of moving it to .env
-export const adminUsername = `klonwar`;
