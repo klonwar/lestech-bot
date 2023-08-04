@@ -21,6 +21,7 @@ import { WithPersonGuard } from './guards/with-person.guard';
 import { AnyExceptionFilter } from './filters/any-exception.filter';
 import { GuardExceptionFilter } from './filters/guard-exception.filter';
 import { Person } from '../model/person/person.model';
+import { CommandBodyPipe } from './pipes/command-body.pipe';
 
 @Update()
 @Injectable()
@@ -48,10 +49,9 @@ export class BotUpdate {
   async check(
     @Ctx() context: SceneContext,
     @Sender() sender: TelegramUser,
-    @Message('text') message: string,
+    @Message('text', CommandBodyPipe) body: string,
   ) {
     const user = await this.userRepository.findOneBy({ id: sender.id });
-    const body = message.replace(/\/[a-zA-Z]+\s*/, '');
     const about = body
       ? await this.personRepository.findOneBy([
           {
